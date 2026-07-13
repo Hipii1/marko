@@ -27,7 +27,7 @@ if uploaded_files:
                 Ovo su slike dokumenata sa spiskovima artikala i cenama (ima ih više). 
                 Pažljivo pročitaj SVE ubačene slike i sve stavke sa njih, a zatim izračunaj zaradu po sledećim pravilima:
                 1. Ako je tip artikla Tapacir (ili tapacirani nameštaj), procenat je 5.5% (cena * 0.055).
-                2. Ako je tip artikla Ploča (ili pločasti material), procenat je 2.4% (cena * 0.024).
+                2. Ako je tip artikla Ploča (ili pločasti materijal), procenat je 2.4% (cena * 0.024).
                 3. Ako je tip artikla Dušek, procenat je 1.2% (cena * 0.012).
                 
                 Prikaži rezultat u obliku JEDNE zajedničke, pregledne tabele sa kolonama: Artikal, Cena, Tip Posla, Moja Zarada.
@@ -61,8 +61,8 @@ if uploaded_files:
                     }]
                 }
                 
-                # Najnoviji gemini-3-flash model i v1beta adresa
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash:generateContent?key={api_key}"
+                # TAČAN LINK: Dodat "-preview" na kraj naziva modela
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={api_key}"
                 headers = {"Content-Type": "application/json"}
                 
                 response = requests.post(url, headers=headers, json=payload)
