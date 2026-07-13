@@ -1,38 +1,32 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 from PIL import Image
-
-# Povlačimo ključ iz tajnih podešavanja sajta
-if "GEMINI_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-else:
-    st.error("Greška: API ključ nije podešen u Secrets sekciji!")
 
 st.set_page_config(page_title="Obračun Plate", layout="centered")
 
 st.title("📊 Računanje Plate (Masovni Unos)")
 st.write("Izaberite jednu ili više slika papira odjednom:")
 
-# DODATO: accept_multiple_files=True omogućava izbor više slika odjednom
-uploaded_files = st.file_uploader("Ubacite slike papira:", type=["jpg", "jpeg", "png", "pdf"], accept_multiple_files=True)
+# Povlačimo ključ i inicijalizujemo novi GenAI klijent
+if "GEMINI_API_KEY" in st.secrets:
+    client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+else:
+    st.error("Greška: API ključ nije podešen u Secrets sekciji!")
+    st.stop()
+
+uploaded_files = st.file_uploader("Ubacite slike papira:", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
 
 if uploaded_files:
     slike = []
-    
-    # Prolazimo kroz sve ubačene fajlove i otvaramo ih
     for uploaded_file in uploaded_files:
         slika = Image.open(uploaded_file)
         slike.append(slika)
         
     st.success(f"📸 Uspešno učitano slika: {len(uploaded_files)}")
     
-    # Dugme koje pokreće zajednički obračun
     if st.button('🚀 Izračunaj Zajedničku Platu'):
         with st.spinner(f'AI trenutno čita svih {len(uploaded_files)} papira i spaja računicu...'):
             try:
-                # Koristimo 2.0 Flash model koji bez problema guta više slika odjednom
-                model = genai.GenerativeModel('gemini-3-flash-preview')
-                
                 uputstvo = """
                 Ovo su slike dokumenata sa spiskovima artikala i cenama (ima ih više). 
                 Pažljivo pročitaj SVE ubačene slike i sve stavke sa njih, a zatim izračunaj zaradu po sledećim pravilima:
@@ -45,10 +39,15 @@ if uploaded_files:
                 Obrati pažnju na tačnost brojeva. Odgovori isključivo na srpskom jeziku.
                 """
                 
-                # Spajamo tekstualno uputstvo i listu svih slika u jedan paket za AI
+                # Novi format slanja za novi SDK paket
                 sadrzaj = [uputstvo] + slike
                 
-                response = model.generate_content(sadrzaj)
+                # Pozivamo najnoviji Gemini 3 model preko novog klijenta
+                response = client.models.generate_content(
+                    model='gemini-3-flash-preview',
+                    contents=sadrzaj
+                )
+                
                 st.success('Završeno!')
                 st.write(response.text)
                 
