@@ -61,7 +61,6 @@ if uploaded_files:
                     }]
                 }
                 
-                # TAČAN LINK: Dodat "-preview" na kraj naziva modela
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={api_key}"
                 headers = {"Content-Type": "application/json"}
                 
@@ -69,8 +68,8 @@ if uploaded_files:
                 response_data = response.json()
                 
                 if response.status_code == 200:
-                    # Izvlačimo tekstualni odgovor nazad na ekran
-                    odgovor = response_data["contents"][0]["parts"][0]["text"]
+                    # POPRAVLjENO: Izvađen tačan raspored strukture koju Gugl šalje nazad (candidates -> content -> parts)
+                    odgovor = response_data["candidates"][0]["content"]["parts"][0]["text"]
                     st.success('Završeno!')
                     st.write(odgovor)
                 else:
