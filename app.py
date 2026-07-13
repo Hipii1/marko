@@ -24,37 +24,49 @@ if uploaded_files:
     if st.button('🚀 Izračunaj Zajedničku Platu'):
         with st.spinner(f'AI trenutno čita svih {len(uploaded_files)} papira i spaja računicu...'):
             try:
+                # DETALJNA PRAVILA ZA KLASIFIKACIJU DA AI VIŠE NE GREŠI ARTIKLE
                 uputstvo = """
                 Ovo su slike dokumenata sa spiskovima artikala i cenama (ima ih više). 
-                Pažljivo pročitaj SVE ubačene slike i sve stavke sa njih, a zatim izračunaj zaradu po sledećim pravilima:
-                1. Ako je tip artikla Tapacir (ili tapacirani nameštaj), procenat je 5.5% (cena * 0.055).
-                2. Ako je tip artikla Ploča (ili pločasti materijal), procenat je 2.4% (cena * 0.024).
-                3. Ako je tip artikla Dušek, procenat je 1.2% (cena * 0.012).
+                Pažljivo pročitaj SVE ubačene slike i sve stavke sa njih, a zatim kategorizuj artikle i izračunaj zaradu po sledećim STRIKTNIM pravilima:
+
+                KATEGORIJE I PROCENTI:
+
+                1. TAPACIR (Procenat: 5.5% -> cena * 0.055):
+                   * Svi LEŽAJEVI (npr. Ležaj Fido, Ležaj Rock, Fido Rock, i bilo koji drugi ležaj). "Ležaj" NIJE dušek!
+                   * Trosedi, dvosedi, fotelje, ugaone garniture, garniture, francuski ležajevi, kaučevi, sofe, taburei.
+                   * Tapacirane stolice i bilo koji drugi tapacirani nameštaj.
+
+                2. PLOČA (Procenat: 2.4% -> cena * 0.024):
+                   * Sav pločasti nameštaj.
+                   * Stolovi (trpezarijski, klub, radni, pisaći), komode, ormari, garderoberi, noćni ormarići, cipelarnici, police, kuhinje, predsoblja, TV komode, vitrine.
+                   * Drveni kreveti (koji nisu tapacirani).
+
+                3. DUŠEK (Procenat: 1.2% -> cena * 0.012):
+                   * Isključivo i samo DUŠECI i NADDUŠECI (artikli koji u nazivu sadrže reč "dušek" ili "naddušek").
+
+                Pravila za prikaz i računanje:
+                - Prikaži rezultat u obliku JEDNE zajedničke, pregledne tabele sa kolonama: Artikal, Cena, Tip Posla (Tapacir, Ploča ili Dušek), Moja Zarada.
+                - Na samom kraju, masnim slovima ispiši ukupan zbir za sve papire: 'UKUPNA ZARADA ZA SVE PAPIRE: [Suma svih zarada] rsd'.
                 
-                Prikaži rezultat u obliku JEDNE zajedničke, pregledne tabele sa kolonama: Artikal, Cena, Tip Posla, Moja Zarada.
-                Na samom kraju, masnim slovima ispiši ukupan zbir za sve papire: 'UKUPNA ZARADA ZA SVE PAPIRE: [Suma svih zarada] rsd'.
-                Obrati pažnju na tačnost brojeva. Odgovori isključivo na srpskom jeziku.
+                Budi ekstremno precizan sa brojevima. Prvo uradi matematiku u pozadini, pa onda prikaži tabelu.
+                Odgovori isključivo na srpskom jeziku.
                 """
                 
                 content_list = [{"type": "text", "text": uputstvo}]
                 
                 for uploaded_file in uploaded_files:
-                    # Otvaramo sliku preko PIL-a da bismo je optimizovali
                     img = Image.open(uploaded_file)
                     
-                    # Ako slika ima transparentnost (PNG), prebacujemo u RGB format
                     if img.mode in ("RGBA", "P"):
                         img = img.convert("RGB")
                     
-                    # Smanjujemo rezoluciju ako je slika ogromna (optimizacija za telefone)
-                    max_size = 1600
+                    # Održavamo visoku oštrinu za čitanje sitnog teksta
+                    max_size = 2000
                     if img.width > max_size or img.height > max_size:
                         img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
                     
-                    # Kompresujemo sliku u memorijski bafer kao JPEG sa 50% kvaliteta
-                    # Tekst ostaje oštar i čitljiv, a težina fajla drastično opada
                     buffer = BytesIO()
-                    img.save(buffer, format="JPEG", quality=50)
+                    img.save(buffer, format="JPEG", quality=85)
                     file_bytes = buffer.getvalue()
                     
                     base64_data = base64.b64encode(file_bytes).decode("utf-8")
@@ -73,7 +85,8 @@ if uploaded_files:
                             "role": "user",
                             "content": content_list
                         }
-                    ]
+                    ],
+                    "temperature": 0.0
                 }
                 
                 url = "https://api.groq.com/openai/v1/chat/completions"
