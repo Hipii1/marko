@@ -31,7 +31,7 @@ if uploaded_files:
         with st.spinner(f'AI trenutno čita svih {len(uploaded_files)} papira i spaja računicu...'):
             try:
                 # Koristimo 2.0 Flash model koji bez problema guta više slika odjednom
-                model = genai.GenerativeModel('gemini-2.0-flash')
+                model = genai.GenerativeModel('gemini-1.5-flash')
                 
                 uputstvo = """
                 Ovo su slike dokumenata sa spiskovima artikala i cenama (ima ih više). 
