@@ -5,14 +5,14 @@ from PIL import Image
 
 st.set_page_config(page_title="Obračun Plate", layout="centered")
 
-st.title("📊 Računanje Plate (Masovni Unos)")
+st.title("📊 Računanje Plate (Masovni Unos) - ChatGPT")
 st.write("Izaberite jednu ili više slika papira odjednom:")
 
-# Povlačimo NOVI ključ iz tajnih podešavanja sajta
-if "GEMINI_API_KEY" in st.secrets:
-    api_key = st.secrets["GEMINI_API_KEY"]
+# Povlačimo OpenAI ključ iz tajnih podešavanja sajta
+if "OPENAI_API_KEY" in st.secrets:
+    api_key = st.secrets["OPENAI_API_KEY"]
 else:
-    st.error("Greška: API ključ nije podešen u Secrets sekciji!")
+    st.error("Greška: OPENAI_API_KEY nije podešen u Secrets sekciji!")
     st.stop()
 
 uploaded_files = st.file_uploader("Ubacite slike papira:", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
@@ -21,7 +21,7 @@ if uploaded_files:
     st.success(f"📸 Uspešno učitano slika: {len(uploaded_files)}")
     
     if st.button('🚀 Izračunaj Zajedničku Platu'):
-        with st.spinner(f'AI trenutno čita svih {len(uploaded_files)} papira i spaja računicu...'):
+        with st.spinner(f'ChatGPT trenutno čita svih {len(uploaded_files)} papira i spaja računicu...'):
             try:
                 uputstvo = """
                 Ovo su slike dokumenata sa spiskovima artikala i cenama (ima ih više). 
@@ -35,10 +35,9 @@ if uploaded_files:
                 Obrati pažnju na tačnost brojeva. Odgovori isključivo na srpskom jeziku.
                 """
                 
-                # Pakujemo tekstualno uputstvo za API
-                parts = [{"text": uputstvo}]
+                # Sklapanje sadržaja u formatu koji OpenAI zahteva za slike
+                content_list = [{"type": "text", "text": uputstvo}]
                 
-                # Pretvaramo svaku sliku u base64 format koji Google API zahteva
                 for uploaded_file in uploaded_files:
                     file_bytes = uploaded_file.read()
                     base64_data = base64.b64encode(file_bytes).decode("utf-8")
@@ -47,33 +46,38 @@ if uploaded_files:
                     if uploaded_file.name.lower().endswith(".png"):
                         mime_type = "image/png"
                         
-                    parts.append({
-                        "inlineData": {
-                            "mimeType": mime_type,
-                            "data": base64_data
+                    content_list.append({
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:{mime_type};base64,{base64_data}"
                         }
                     })
                 
-                # Sklapanje JSON paketa za slanje
                 payload = {
-                    "contents": [{
-                        "parts": parts
-                    }]
+                    "model": "gpt-4o-mini",
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": content_list
+                        }
+                    ]
                 }
                 
-                # Vraćamo se na stabilni 2.0 flash koji sada ima čist i odblokiran račun
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
-                headers = {"Content-Type": "application/json"}
+                url = "https://api.openai.com/v1/chat/completions"
+                headers = {
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {api_key}"
+                }
                 
                 response = requests.post(url, headers=headers, json=payload)
                 response_data = response.json()
                 
                 if response.status_code == 200:
-                    odgovor = response_data["candidates"][0]["content"]["parts"][0]["text"]
+                    odgovor = response_data["choices"][0]["message"]["content"]
                     st.success('Završeno!')
                     st.write(odgovor)
                 else:
-                    st.error(f"Google API Greška ({response.status_code}): {response.text}")
+                    st.error(f"OpenAI API Greška ({response.status_code}): {response.text}")
                     
             except Exception as e:
                 st.error(f"Došlo je do neočekivane greške: {e}")
