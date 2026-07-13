@@ -61,8 +61,8 @@ if uploaded_files:
                     }]
                 }
                 
-                # POPRAVLjENO: Promenjeno v1 u v1beta u URL adresi
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+                # POPRAVLjENO: Postavljen aktuelni gemini-2.5-flash model u URL adresi
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
                 headers = {"Content-Type": "application/json"}
                 
                 response = requests.post(url, headers=headers, json=payload)
