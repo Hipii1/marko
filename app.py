@@ -8,7 +8,7 @@ st.set_page_config(page_title="Obračun Plate", layout="centered")
 st.title("📊 Računanje Plate (Masovni Unos)")
 st.write("Izaberite jednu ili više slika papira odjednom:")
 
-# Povlačimo ključ iz tajnih podešavanja sajta
+# Povlačimo NOVI ključ iz tajnih podešavanja sajta
 if "GEMINI_API_KEY" in st.secrets:
     api_key = st.secrets["GEMINI_API_KEY"]
 else:
@@ -61,8 +61,8 @@ if uploaded_files:
                     }]
                 }
                 
-                # PRELAZAK NA ZVANIČNI PRO MODEL KOJI IMA OTVOREN LIMIT
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-pro:generateContent?key={api_key}"
+                # Vraćamo se na stabilni 2.0 flash koji sada ima čist i odblokiran račun
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
                 headers = {"Content-Type": "application/json"}
                 
                 response = requests.post(url, headers=headers, json=payload)
