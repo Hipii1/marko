@@ -5,14 +5,14 @@ from PIL import Image
 
 st.set_page_config(page_title="Obračun Plate", layout="centered")
 
-st.title("📊 Računanje Plate (Masovni Unos) - ChatGPT")
+st.title("📊 Računanje Plate (Masovni Unos) - Groq")
 st.write("Izaberite jednu ili više slika papira odjednom:")
 
-# Povlačimo OpenAI ključ iz tajnih podešavanja sajta
-if "OPENAI_API_KEY" in st.secrets:
-    api_key = st.secrets["OPENAI_API_KEY"]
+# Povlačimo Groq ključ iz tajnih podešavanja sajta
+if "GROQ_API_KEY" in st.secrets:
+    api_key = st.secrets["GROQ_API_KEY"]
 else:
-    st.error("Greška: OPENAI_API_KEY nije podešen u Secrets sekciji!")
+    st.error("Greška: GROQ_API_KEY nije podešen u Secrets sekciji!")
     st.stop()
 
 uploaded_files = st.file_uploader("Ubacite slike papira:", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
@@ -21,7 +21,7 @@ if uploaded_files:
     st.success(f"📸 Uspešno učitano slika: {len(uploaded_files)}")
     
     if st.button('🚀 Izračunaj Zajedničku Platu'):
-        with st.spinner(f'ChatGPT trenutno čita svih {len(uploaded_files)} papira i spaja računicu...'):
+        with st.spinner(f'AI trenutno čita svih {len(uploaded_files)} papira i spaja računicu...'):
             try:
                 uputstvo = """
                 Ovo su slike dokumenata sa spiskovima artikala i cenama (ima ih više). 
@@ -35,7 +35,6 @@ if uploaded_files:
                 Obrati pažnju na tačnost brojeva. Odgovori isključivo na srpskom jeziku.
                 """
                 
-                # Sklapanje sadržaja u formatu koji OpenAI zahteva za slike
                 content_list = [{"type": "text", "text": uputstvo}]
                 
                 for uploaded_file in uploaded_files:
@@ -54,7 +53,7 @@ if uploaded_files:
                     })
                 
                 payload = {
-                    "model": "gpt-4o-mini",
+                    "model": "llama-3.2-11b-vision-preview",
                     "messages": [
                         {
                             "role": "user",
@@ -63,7 +62,8 @@ if uploaded_files:
                     ]
                 }
                 
-                url = "https://api.openai.com/v1/chat/completions"
+                # Šaljemo na Groq server koji je besplatan
+                url = "https://api.groq.com/openai/v1/chat/completions"
                 headers = {
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {api_key}"
@@ -77,7 +77,7 @@ if uploaded_files:
                     st.success('Završeno!')
                     st.write(odgovor)
                 else:
-                    st.error(f"OpenAI API Greška ({response.status_code}): {response.text}")
+                    st.error(f"Groq API Greška ({response.status_code}): {response.text}")
                     
             except Exception as e:
                 st.error(f"Došlo je do neočekivane greške: {e}")
