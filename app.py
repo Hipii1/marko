@@ -61,8 +61,8 @@ if uploaded_files:
                     }]
                 }
                 
-                # KORISTIMO STABILNI GEMINI 2.0 FLASH SA OGROMNIM LIMITOM
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+                # PRELAZAK NA ZVANIČNI PRO MODEL KOJI IMA OTVOREN LIMIT
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-pro:generateContent?key={api_key}"
                 headers = {"Content-Type": "application/json"}
                 
                 response = requests.post(url, headers=headers, json=payload)
