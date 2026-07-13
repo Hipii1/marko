@@ -1,5 +1,6 @@
 import streamlit as st
-from google import genai
+import requests
+import base64
 from PIL import Image
 
 st.set_page_config(page_title="Obračun Plate", layout="centered")
@@ -7,9 +8,9 @@ st.set_page_config(page_title="Obračun Plate", layout="centered")
 st.title("📊 Računanje Plate (Masovni Unos)")
 st.write("Izaberite jednu ili više slika papira odjednom:")
 
-# Povlačimo ključ i inicijalizujemo novi GenAI klijent
+# Povlačimo ključ iz tajnih podešavanja sajta
 if "GEMINI_API_KEY" in st.secrets:
-    client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+    api_key = st.secrets["GEMINI_API_KEY"]
 else:
     st.error("Greška: API ključ nije podešen u Secrets sekciji!")
     st.stop()
@@ -17,11 +18,6 @@ else:
 uploaded_files = st.file_uploader("Ubacite slike papira:", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
 
 if uploaded_files:
-    slike = []
-    for uploaded_file in uploaded_files:
-        slika = Image.open(uploaded_file)
-        slike.append(slika)
-        
     st.success(f"📸 Uspešno učitano slika: {len(uploaded_files)}")
     
     if st.button('🚀 Izračunaj Zajedničku Platu'):
@@ -39,17 +35,46 @@ if uploaded_files:
                 Obrati pažnju na tačnost brojeva. Odgovori isključivo na srpskom jeziku.
                 """
                 
-                # Novi format slanja za novi SDK paket
-                sadrzaj = [uputstvo] + slike
+                # Pakujemo tekstualno uputstvo za API
+                parts = [{"text": uputstvo}]
                 
-                # Pozivamo najnoviji Gemini 3 model preko novog klijenta
-                response = client.models.generate_content(
-                    model='gemini-3-flash-preview',
-                    contents=sadrzaj
-                )
+                # Pretvaramo svaku sliku u base64 format koji Google API zahteva
+                for uploaded_file in uploaded_files:
+                    file_bytes = uploaded_file.read()
+                    base64_data = base64.b64encode(file_bytes).decode("utf-8")
+                    
+                    mime_type = "image/jpeg"
+                    if uploaded_file.name.lower().endswith(".png"):
+                        mime_type = "image/png"
+                        
+                    parts.append({
+                        "inlineData": {
+                            "mimeType": mime_type,
+                            "data": base64_data
+                        }
+                    })
                 
-                st.success('Završeno!')
-                st.write(response.text)
+                # Sklapanje JSON paketa za slanje
+                payload = {
+                    "contents": [{
+                        "parts": parts
+                    }]
+                }
                 
+                # Pozivamo direktan, zvanični produkcioni v1 endpoint za gemini-1.5-flash
+                url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+                headers = {"Content-Type": "application/json"}
+                
+                response = requests.post(url, headers=headers, json=payload)
+                response_data = response.json()
+                
+                if response.status_code == 200:
+                    # Izvlačimo tekstualni odgovor nazad na ekran
+                    odgovor = response_data["contents"][0]["parts"][0]["text"]
+                    st.success('Završeno!')
+                    st.write(odgovor)
+                else:
+                    st.error(f"Google API Greška ({response.status_code}): {response.text}")
+                    
             except Exception as e:
-                st.error(f"Došlo je do greške: {e}")
+                st.error(f"Došlo je do neočekivane greške: {e}")
