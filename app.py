@@ -61,8 +61,8 @@ if uploaded_files:
                     }]
                 }
                 
-                # Pozivamo direktan, zvanični produkcioni v1 endpoint za gemini-1.5-flash
-                url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+                # POPRAVLjENO: Promenjeno v1 u v1beta u URL adresi
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
                 headers = {"Content-Type": "application/json"}
                 
                 response = requests.post(url, headers=headers, json=payload)
