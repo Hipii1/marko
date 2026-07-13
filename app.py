@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import base64
 from PIL import Image
+from io import BytesIO
 
 st.set_page_config(page_title="Obračun Plate", layout="centered")
 
@@ -38,17 +39,30 @@ if uploaded_files:
                 content_list = [{"type": "text", "text": uputstvo}]
                 
                 for uploaded_file in uploaded_files:
-                    file_bytes = uploaded_file.read()
+                    # Otvaramo sliku preko PIL-a da bismo je optimizovali
+                    img = Image.open(uploaded_file)
+                    
+                    # Ako slika ima transparentnost (PNG), prebacujemo u RGB format
+                    if img.mode in ("RGBA", "P"):
+                        img = img.convert("RGB")
+                    
+                    # Smanjujemo rezoluciju ako je slika ogromna (optimizacija za telefone)
+                    max_size = 1600
+                    if img.width > max_size or img.height > max_size:
+                        img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
+                    
+                    # Kompresujemo sliku u memorijski bafer kao JPEG sa 50% kvaliteta
+                    # Tekst ostaje oštar i čitljiv, a težina fajla drastično opada
+                    buffer = BytesIO()
+                    img.save(buffer, format="JPEG", quality=50)
+                    file_bytes = buffer.getvalue()
+                    
                     base64_data = base64.b64encode(file_bytes).decode("utf-8")
                     
-                    mime_type = "image/jpeg"
-                    if uploaded_file.name.lower().endswith(".png"):
-                        mime_type = "image/png"
-                        
                     content_list.append({
                         "type": "image_url",
                         "image_url": {
-                            "url": f"data:{mime_type};base64,{base64_data}"
+                            "url": f"data:image/jpeg;base64,{base64_data}"
                         }
                     })
                 
@@ -62,7 +76,6 @@ if uploaded_files:
                     ]
                 }
                 
-                # Šaljemo na Groq server koji je besplatan
                 url = "https://api.groq.com/openai/v1/chat/completions"
                 headers = {
                     "Content-Type": "application/json",
