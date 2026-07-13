@@ -61,14 +61,14 @@ if uploaded_files:
                     }]
                 }
                 
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={api_key}"
+                # KORISTIMO STABILNI GEMINI 2.0 FLASH SA OGROMNIM LIMITOM
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
                 headers = {"Content-Type": "application/json"}
                 
                 response = requests.post(url, headers=headers, json=payload)
                 response_data = response.json()
                 
                 if response.status_code == 200:
-                    # POPRAVLjENO: Izvađen tačan raspored strukture koju Gugl šalje nazad (candidates -> content -> parts)
                     odgovor = response_data["candidates"][0]["content"]["parts"][0]["text"]
                     st.success('Završeno!')
                     st.write(odgovor)
